@@ -1,0 +1,816 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wild Wonderlands</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Gowun+Dodum&family=Lexend:wght@400;500;600;700&display=swap"></head><body>
+<style>
+/* Layout: one reading column; four national park passport stamps (A-D) get stamped as each expert part is finished */
+:root{
+  --bg:#f1f3ec; --surface:#ffffff; --fg:#1f2a22; --muted:#5f6b62; --line:#d6dccf;
+  --main:#2f6b4f; --main-soft:#e2eee6; --warm:#b4692a; --warm-soft:#f6eadc;
+  --partA:#2b6c9a; --partB:#3d7a3a; --partC:#b4692a; --partD:#8e4a3a;
+  --ok:#2f7d4f; --ok-soft:#e1f1e6; --no:#b54a3a; --no-soft:#f8e4e0; --on:#ffffff; --dirt:#b9c1b4;
+  --font-en:"Lexend","Segoe UI",system-ui,sans-serif;
+  --font-ko:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a16; --surface:#1d251f; --fg:#e6ece6; --muted:#a2b0a5; --line:#323d35;
+  --main:#86c5a2; --main-soft:#213229; --warm:#e3a56d; --warm-soft:#3a2b1d;
+  --partA:#8cbfe6; --partB:#97cf8f; --partC:#e3a56d; --partD:#e29a88;
+  --ok:#7fcf9c; --ok-soft:#1f3a2a; --no:#f09a8a; --no-soft:#41241f; --on:#141a16; --dirt:#4a564d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a16; --surface:#1d251f; --fg:#e6ece6; --muted:#a2b0a5; --line:#323d35;
+  --main:#86c5a2; --main-soft:#213229; --warm:#e3a56d; --warm-soft:#3a2b1d;
+  --partA:#8cbfe6; --partB:#97cf8f; --partC:#e3a56d; --partD:#e29a88;
+  --ok:#7fcf9c; --ok-soft:#1f3a2a; --no:#f09a8a; --no-soft:#41241f; --on:#141a16; --dirt:#4a564d; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-ko);font-size:17px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:760px;margin:0 auto;padding-block:16px 48px;display:flex;flex-direction:column;gap:18px}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:3px solid var(--main);outline-offset:2px}
+.en{font-family:var(--font-en)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;flex-direction:column}
+.brand b{font-family:var(--font-en);font-weight:600;font-size:1.25rem;line-height:1.2}
+.brand span{color:var(--muted);font-size:.9rem}
+.homebtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-size:.95rem;white-space:nowrap}
+h1{font-size:1.4rem;line-height:1.35;margin:0;text-wrap:balance}
+h2{font-size:1.12rem;margin:0}
+h2 small{color:var(--muted);font-weight:400;font-size:.88rem}
+.note{color:var(--muted);font-size:.93rem;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.feet{display:flex;justify-content:center;flex-wrap:wrap;gap:clamp(8px,3.5vw,30px);padding-top:6px}
+.foot{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--font-en);font-weight:600}
+.foot svg{width:60px;height:60px}
+.foot span{font-size:.85rem}
+.parts{display:grid;grid-template-columns:1fr;gap:12px}
+.pcard{--c:var(--partA);text-align:left;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--c);
+  border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.pcard .tag{font-family:var(--font-en);font-weight:600;color:var(--c);font-size:.95rem}
+.pcard .t{font-size:1.05rem}
+.pcard .s{color:var(--muted);font-size:.88rem}
+.pcard.done .s{color:var(--ok)}
+.big{border:none;border-radius:14px;background:var(--main);color:var(--on);padding:16px;font-size:1.12rem;width:100%}
+.big.warm{background:var(--warm)}
+.big:disabled{opacity:.45;cursor:default}
+.steps{display:grid;grid-template-columns:repeat(var(--n,5),1fr);gap:5px}
+.step{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 2px;font-size:.82rem;line-height:1.25;color:var(--muted)}
+.step b{display:block;font-family:var(--font-en);font-size:.76rem}
+.step[aria-current="true"]{border-color:var(--pc);color:var(--fg);background:var(--soft)}
+.step.done b::after{content:" ✓";color:var(--ok)}
+.parthead{display:flex;gap:10px;align-items:center}
+.badge{font-family:var(--font-en);font-weight:600;color:var(--on);background:var(--pc);border-radius:8px;padding:2px 10px;font-size:.95rem;white-space:nowrap}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.chipbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:.92rem}
+.chipbtn[aria-pressed="true"]{background:var(--soft);border-color:var(--pc)}
+.who{font-family:var(--font-en);font-size:.8rem;font-weight:600;color:var(--pc);background:var(--soft);border-radius:6px;padding:2px 8px;justify-self:start;margin-top:8px}
+.who.hdl{color:var(--main);background:var(--main-soft)}
+.sent{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.sent .n{font-family:var(--font-en);color:var(--muted);font-size:.85rem;padding-top:3px}
+.sent .e{font-family:var(--font-en);font-size:1.06rem;line-height:1.65;min-width:0}
+.sent .e u{text-decoration-color:var(--pc);text-decoration-thickness:3px;text-underline-offset:4px}
+.sent .k{grid-column:2;color:var(--muted);background:var(--soft);border-radius:8px;padding:6px 10px}
+.sent .acts{grid-column:2;display:flex;gap:8px;flex-wrap:wrap}
+.wtag{display:inline-block;font-size:.85rem;background:var(--soft);color:var(--pc);border-radius:6px;padding:0 6px;margin-left:4px;font-family:var(--font-ko)}
+.mini{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:3px 10px;font-size:.85rem}
+.words{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.word{border:1px solid var(--line);background:var(--surface);border-radius:12px;min-height:76px;padding:10px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px}
+.word .we{font-family:var(--font-en);font-weight:500;font-size:1.02rem}
+.word .wk{color:var(--pc);font-size:.96rem}
+.word.flipped{background:var(--soft);border-color:var(--pc)}
+.q{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.q .qt{font-family:var(--font-en);font-weight:500}
+.q .qk{color:var(--muted);font-size:.92rem;margin-top:-6px}
+.q .line{font-family:var(--font-en);background:var(--bg);border-radius:8px;padding:8px 12px;line-height:2}
+.blank{display:inline-block;min-width:70px;border-bottom:2px solid var(--pc);text-align:center;padding:0 6px;font-weight:600;color:var(--pc);line-height:1.5}
+.blank.ok{color:var(--ok);border-color:var(--ok)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 14px;font-size:1rem}
+.opt.en{font-family:var(--font-en)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--no);background:var(--no-soft);animation:shake .3s}
+.opt:disabled{opacity:.35;cursor:default}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.fb{font-size:.95rem;min-height:1.4em;margin:0}
+.fb.ok{color:var(--ok)} .fb.no{color:var(--no)}
+.pattern{border:2px solid var(--pc);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.pattern .form{font-family:var(--font-en);font-weight:600;color:var(--pc);font-size:1.15rem}
+.pattern .ex{font-family:var(--font-en)}
+.pattern .exk{color:var(--muted);font-size:.93rem}
+.built{display:flex;flex-wrap:wrap;gap:6px;min-height:46px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--bg);font-family:var(--font-en)}
+.built span{background:var(--soft);border:1px solid var(--pc);border-radius:8px;padding:2px 8px}
+.bridge{background:var(--warm-soft);border-radius:12px;padding:12px 14px;font-size:.98rem}
+.script{background:var(--soft);border-radius:12px;padding:14px 16px;font-size:1.06rem;line-height:1.8}
+.keycard{border:2px solid var(--pc);border-radius:14px;padding:16px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.keycard .ke{font-family:var(--font-en);font-size:1.3rem;font-weight:600;color:var(--pc)}
+.keycard .kx{font-family:var(--font-en);color:var(--muted)}
+.check{display:flex;gap:10px;align-items:flex-start;padding:6px 0;cursor:pointer}
+.check input{width:22px;height:22px;margin-top:3px;accent-color:var(--main);flex:none}
+.nav{display:flex;gap:10px}
+.nav button{flex:1;border-radius:12px;padding:12px;font-size:1.02rem;border:1px solid var(--line);background:var(--surface)}
+.nav .go{background:var(--pc);border-color:var(--pc);color:var(--on)}
+.rbox{--c:var(--partA);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--surface)}
+.rbox h3{margin:0;font-size:1.02rem}
+.rbox h3 span{font-family:var(--font-en);color:var(--c);margin-right:6px}
+.fill{display:flex;flex-direction:column;gap:6px}
+.fill .p.en{font-family:var(--font-en)}
+.vq{display:flex;flex-direction:column;gap:8px}
+.vq .def{font-family:var(--font-en);font-size:1.15rem}
+.meter{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--main);transition:width .3s}
+.poster{border:2px solid var(--main);border-radius:16px;padding:20px;background:var(--main-soft);display:flex;flex-direction:column;gap:10px}
+.poster h3{margin:0;font-family:var(--font-en);color:var(--main);font-size:1.25rem}
+.poster ol{margin:0;padding-left:1.3em;font-family:var(--font-en);font-size:1.08rem;line-height:1.8}
+.poster .hl{color:var(--warm);font-weight:600}
+.typed{width:100%;font:inherit;font-family:var(--font-en);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.done-hero{text-align:center;align-items:center}
+.done-hero .hr{font-family:var(--font-en);font-weight:600;font-size:1.8rem;color:var(--main)}
+table.gt{width:100%;border-collapse:collapse;font-size:.95rem}
+table.gt th,table.gt td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+table.gt th{background:var(--bg);font-weight:400;color:var(--muted)}
+table.gt td.en{font-family:var(--font-en)}
+.tw{overflow-x:auto}
+@media (max-width:480px){.step{font-size:.72rem}.step b{font-size:.64rem}}
+.rq .qt{font-family:var(--font-en);font-weight:500}
+.rq .opt{text-align:left}
+.ptag{font-family:var(--font-en);font-size:.78rem;font-weight:600;color:var(--on);border-radius:6px;padding:1px 8px;justify-self:start;align-self:flex-start}
+.why{font-size:.93rem;color:var(--muted)}
+select.typed{width:auto}
+@media (prefers-reduced-motion:reduce){.opt.wrong{animation:none}.meter i{transition:none}}
+
+/* ---------- textbook-viewer theme, deeper colors ---------- */
+:root{
+  --bg:#e9ebf8; --surface:#ffffff; --fg:#17193a; --muted:#45486e; --line:#c4c8ea;
+  --main:#3a3dab; --main-soft:#e1e2f8; --warm:#b4470c; --warm-soft:#fbe6d6;
+  --partA:#1d4f9e; --partB:#1f6a35; --partC:#b4470c; --partD:#8e1f3c;
+  --ok:#17703a; --ok-soft:#dcf2e3; --no:#b3231a; --no-soft:#fbe1dd; --on:#ffffff; --dirt:#a9adc9;
+  --bar1:#3f43c0; --bar2:#7175e3; --star:#8b5cf6;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121428; --surface:#1c1f3b; --fg:#eceefe; --muted:#b3b7dc; --line:#353a66;
+  --main:#a5a8ff; --main-soft:#2a2e57; --warm:#ffa868; --warm-soft:#3d2a1d;
+  --partA:#8fb6ff; --partB:#7fd79a; --partC:#ffa868; --partD:#ff8fae;
+  --ok:#7fdc9d; --ok-soft:#1d3a2a; --no:#ff8f84; --no-soft:#46221f; --on:#121428; --dirt:#4c5180;
+  --bar1:#2c2f8f; --bar2:#4b4fbf; --star:#b79cff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121428; --surface:#1c1f3b; --fg:#eceefe; --muted:#b3b7dc; --line:#353a66;
+  --main:#a5a8ff; --main-soft:#2a2e57; --warm:#ffa868; --warm-soft:#3d2a1d;
+  --partA:#8fb6ff; --partB:#7fd79a; --partC:#ffa868; --partD:#ff8fae;
+  --ok:#7fdc9d; --ok-soft:#1d3a2a; --no:#ff8f84; --no-soft:#46221f; --on:#121428; --dirt:#4c5180;
+  --bar1:#2c2f8f; --bar2:#4b4fbf; --star:#b79cff; color-scheme:dark}
+.wrap{max-width:900px}
+.topbar{background:linear-gradient(90deg,var(--bar1),var(--bar2));color:#fff;border-radius:16px;padding:10px 12px 10px 10px;display:flex;align-items:center;gap:12px}
+.topbar .ls{font-family:var(--font-en);font-weight:700;font-size:1.15rem;background:rgba(0,0,0,.22);border-radius:10px;padding:4px 14px;white-space:nowrap}
+.topbar .sub{flex:1;min-width:0;font-family:var(--font-en);font-weight:500;font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .homebtn{background:#fff;color:#2c2f8f;border:none;font-weight:600}
+.hero{position:relative;border-radius:18px;overflow:hidden;background:var(--surface);border:1px solid var(--line)}
+.hero svg{display:block;width:100%;height:auto}
+.hero .tt{text-align:center;line-height:.95;margin-top:calc(-1 * clamp(2.6rem,10vw,5.2rem) * .62);position:relative;padding:0 12px}
+.hero .w1{font-family:Anton,Impact,sans-serif;font-size:clamp(2.6rem,10vw,5.2rem);color:#fff;letter-spacing:.01em;text-shadow:0 3px 10px rgba(0,0,0,.35)}
+.hero .w2{font-family:Anton,Impact,sans-serif;font-size:clamp(2.6rem,10vw,5.2rem);color:var(--main);letter-spacing:.01em;display:inline-block;border-bottom:4px solid var(--star);padding-bottom:2px}
+.hero .cap{padding:10px 0 16px;text-align:center;font-family:var(--font-en);font-weight:600;color:var(--muted);font-size:.98rem}
+h2{color:var(--main);font-weight:700}
+.panel{border-color:var(--line);box-shadow:0 2px 0 rgba(40,44,140,.06)}
+.parthead{background:var(--pc);color:var(--on);border-radius:16px;padding:14px 16px}
+.parthead h1{color:var(--on)}
+.parthead .badge{background:rgba(0,0,0,.25);color:#fff}
+.steps{background:var(--main-soft);border-radius:14px;padding:5px}
+.step{border:none;background:transparent;color:var(--muted);font-weight:500}
+.step[aria-current="true"]{background:var(--surface);color:var(--main);box-shadow:0 1px 3px rgba(0,0,0,.15);font-weight:700}
+.tbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:linear-gradient(90deg,var(--bar1),var(--bar2));border-radius:14px;padding:10px}
+.pill{border:none;border-radius:999px;padding:8px 16px;font-weight:700;font-size:.98rem;color:#17193a;box-shadow:inset 0 -2px 0 rgba(0,0,0,.12)}
+.pill.listen{background:#f3a3bf}.pill.ko{background:#a7e0b0}.pill.hide{background:#f8c49c}.pill.follow{background:#f5e08a}
+.pill[aria-pressed="true"]{outline:3px solid #fff;outline-offset:1px}
+.sent{padding:14px 0}
+.sent .e{font-size:1.32rem;line-height:2.15;letter-spacing:.005em}
+.sent .e u{text-decoration:none;background:linear-gradient(transparent 58%,#ffe066 58%);border-radius:2px}
+:root[data-theme="dark"] .sent .e u{background:linear-gradient(transparent 58%,#8a6d00 58%)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sent .e u{background:linear-gradient(transparent 58%,#8a6d00 58%)}}
+.vw{position:relative;border-bottom:2px solid var(--star);cursor:pointer;white-space:nowrap}
+.vw::before{content:"*";position:absolute;left:-.1em;top:-1.05em;color:var(--star);font-weight:800;font-size:1.05em;line-height:1}
+.hidevw .vw{color:transparent;background:color-mix(in srgb,var(--star) 22%,var(--surface));border-radius:5px}
+.sent.now{background:color-mix(in srgb,#ffe066 30%,var(--surface));border-radius:10px}
+.who.hdl{font-size:.95rem;color:var(--main);background:transparent;padding:0;font-weight:700}
+.opt{border-width:2px;font-weight:500}
+.big{font-weight:700}
+
+.mic{background:#ffe7ef;border-color:#e86a96;color:#8e1f4d;font-weight:700}
+.mic.on{background:#e8336f;color:#fff;border-color:#e8336f;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
+@media (prefers-reduced-motion: reduce){.mic.on{animation:none}}
+.acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tts{background:#e3e9ff;border-color:#5a64d8;color:#2c2f8f;font-weight:700}
+.mres{grid-column:1/-1;margin-top:6px;background:var(--main-soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:.98rem}
+.mres .tw{font-family:var(--font-en);font-size:1.08rem;line-height:1.7}
+.mres .g{color:var(--ok);font-weight:700}.mres .r{color:var(--no);font-weight:700;text-decoration:underline wavy}
+.mres .sc{font-weight:700;color:var(--main)}
+.mres audio{width:100%;max-width:340px;height:36px}
+.speed{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.55);border-radius:999px;padding:5px 12px;font-weight:600;white-space:nowrap}
+.speed[aria-pressed="true"]{background:#fff;color:#2c2f8f}
+.pill.badge{background:#fff;color:#2c2f8f;cursor:default}
+.word{padding:8px 8px 10px;gap:6px}
+.word .wflip{background:none;border:none;padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:var(--fg);width:100%}
+.word .we{font-size:1.12rem;font-weight:600}
+.word .acts{justify-content:center}
+.word .mini{padding:3px 9px;font-size:.85rem}
+.word .mres{font-size:.85rem;padding:6px 8px}
+.word .mres .tw{font-size:.95rem}
+.words{align-items:start}
+.word .acts{flex-wrap:wrap}
+.word .mini{white-space:nowrap;padding:3px 7px}
+.words{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.word .mres .note,.word .mres > span:last-child{display:none}
+.word .mres{width:100%;text-align:center}
+.fill .acts,.q .acts{margin-top:4px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2c2f8f;color:#fff;border-radius:999px;padding:10px 20px;font-size:1.05rem;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:9;max-width:calc(100% - 32px)}
+#toast b{font-family:var(--font-en)}
+@media (max-width:480px){.sent .e{font-size:1.15rem;line-height:2.05}}
+</style>
+
+<div class="wrap" id="app"></div><div id="toast" hidden></div>
+
+<script>
+const DATA = {"parts": {"A": {"title": "국립 공원과 역동적인 자연: 토레스 델 파이네", "page": "123~124쪽", "park": "Torres del Paine", "sents": [["Wild Wonderlands", "National parks are special places for preserving nature.", "국립 공원은 자연을 보존하기 위한 특별한 장소입니다."], ["Wild Wonderlands", "They keep many animal and plant species safe.", "그곳들은 많은 동물과 식물 종들을 안전하게 지킵니다."], ["Wild Wonderlands", "At the same time, they <u>let people enjoy</u> the beauty of nature.", "동시에, 그곳들은 사람들이 자연의 아름다움을 즐기도록 해 줍니다."], ["Wild Wonderlands", "Let's take a look at two famous national parks in South America and Africa.", "남미와 아프리카의 두 유명한 국립 공원을 살펴봅시다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "Can you believe you can experience four seasons in one day?", "하루에 사계절을 경험할 수 있다는 것을 믿을 수 있나요?"], ["Exploring the Dynamic Nature – Torres del Paine National Park", "Torres del Paine National Park in Chile is the perfect place for this.", "칠레의 토레스 델 파이네 국립 공원은 이를 위한 완벽한 장소입니다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "It is famous for its dynamic weather.", "그곳은 역동적인 날씨로 유명합니다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "It can be sunny, rainy, or snowy in a single day!", "단 하루 안에 맑을 수도, 비가 올 수도, 눈이 내릴 수도 있습니다!"], ["Exploring the Dynamic Nature – Torres del Paine National Park", "Also, you can see mountains, lakes, and even a big ice field in this park.", "또한, 이 공원에서는 산, 호수, 그리고 심지어 큰 빙원도 볼 수 있습니다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "For example, Grey Glacier, one of the most wonderful glaciers in Chile, welcomes you in the park.", "예를 들어, 칠레에서 가장 멋진 빙하들 중 하나인 Grey Glacier가 공원에서 여러분을 환영합니다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "<u>It is exciting to walk</u> on the glacier and enjoy the icy view.", "빙하 위를 걷고 얼음에 뒤덮인 경치를 즐기는 것은 신나는 일입니다."]], "words": [["preserve", "보존하다, 보호하다"], ["species", "(생물의) 종"], ["beauty", "아름다움"], ["take a look at", "~을 살펴보다"], ["experience", "경험하다"], ["dynamic", "역동적인"], ["single", "하나의"], ["ice field", "빙원"], ["glacier", "빙하"], ["icy", "얼음에 뒤덮인"], ["view", "경치"], ["wonderland", "아주 멋진 곳"]], "grammar": {"patterns": [{"form": "let + 사람 + 동사원형", "mean": "(사람이) …하도록 해 주다 (허락)", "ex": "They let people enjoy the beauty of nature.", "exk": "그곳들은 사람들이 자연의 아름다움을 즐기도록 해 준다."}, {"form": "It is + 형용사 + to + 동사원형", "mean": "…하는 것은 ~하다 (It은 해석하지 않아요)", "ex": "It is exciting to walk on the glacier.", "exk": "빙하 위를 걷는 것은 신난다."}], "build": [{"k": "그곳들은 사람들이 자연의 아름다움을 즐기도록 해 준다.", "t": ["They", "let", "people", "enjoy", "the beauty of nature."]}, {"k": "빙하 위를 걷는 것은 신난다.", "t": ["It", "is exciting", "to walk", "on the glacier."]}], "choose": [{"k": "할머니는 우리가 아이스크림을 먹도록 해 주셨다.", "pre": "Grandmother let us", "post": "ice cream.", "a": "eat", "o": ["eat", "to eat", "eating"]}, {"k": "물 없이 사는 것은 불가능하다.", "pre": "It is impossible", "post": "without water.", "a": "to live", "o": ["live", "to live", "lives"]}], "bridge": "let처럼 make, have 다음에도 사람 뒤에 동사원형이 와요. B 파트 전문가에게 make 문장을 들어 보세요!"}, "qs": [{"q": "What do national parks keep safe?", "k": "국립 공원은 무엇을 안전하게 지키나요?", "line": "They keep many animal and plant ___ safe.", "blanks": [{"a": "species", "o": ["species", "glaciers", "products", "traps"]}]}, {"q": "What is one of the most wonderful glaciers in Chile?", "k": "칠레에서 가장 멋진 빙하 중 하나는 무엇인가요?", "line": "___ is one of the most wonderful glaciers in Chile.", "blanks": [{"a": "Grey Glacier", "o": ["Grey Glacier", "Kruger", "Big Five", "Torres del Paine"]}]}], "script": "우리 파트는 국립 공원 소개와 칠레의 토레스 델 파이네 국립 공원이야. 국립 공원은 자연을 보존하고 동식물 종을 안전하게 지키면서, 사람들이 자연의 아름다움을 즐기게 해 줘. 토레스 델 파이네는 날씨가 역동적이라서 하루에 사계절을 경험할 수 있어. 산, 호수, 큰 빙원이 있고, 칠레에서 가장 멋진 빙하 중 하나인 Grey Glacier 위를 걷는 것은 정말 신나는 일이래.", "key": "let people enjoy / It is exciting to walk", "keyk": "사람들이 …을 즐기게 해 주다 / 걷는 것은 신난다", "keyx": "It is exciting to walk on the glacier."}, "B": {"title": "토레스 델 파이네의 자연 보존 노력", "page": "125쪽", "park": "Torres del Paine", "sents": [["Exploring the Dynamic Nature – Torres del Paine National Park", "The park is making efforts <u>to preserve</u> its natural beauty.", "그 공원은 자연의 아름다움을 보존하기 위해 노력하고 있습니다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "First, it controls the number of visitors, so they should book <u>to enter</u> the park.", "첫째, 그곳은 방문객 수를 통제해서, 방문객들은 공원에 들어가기 위해 예약해야 합니다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "Second, only some park trails are open to visitors for hiking.", "둘째, 공원 산책로 중 일부만 하이킹하는 방문객들에게 열려 있습니다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "Third, the park <u>makes visitors take</u> their trash with them when they leave.", "셋째, 그 공원은 방문객들이 떠날 때 쓰레기를 가져가도록 합니다."], ["Exploring the Dynamic Nature – Torres del Paine National Park", "There's one more thing: the hotels in the park do not use plastic and only use eco-friendly products.", "한 가지가 더 있습니다. 공원 안의 호텔들은 플라스틱을 사용하지 않고 친환경 제품만 사용합니다."]], "words": [["make efforts", "노력하다"], ["natural", "자연의"], ["control", "통제하다"], ["the number of", "~의 수"], ["visitor", "방문객"], ["book", "예약하다"], ["enter", "들어가다"], ["trail", "산책로, 길"], ["hiking", "하이킹, 도보 여행"], ["trash", "쓰레기"], ["leave", "떠나다"], ["eco-friendly", "친환경적인"], ["product", "제품"]], "grammar": {"patterns": [{"form": "make + 사람 + 동사원형", "mean": "(사람이) …하게 하다, 시키다", "ex": "The park makes visitors take their trash with them.", "exk": "그 공원은 방문객들이 쓰레기를 가져가게 한다."}, {"form": "to + 동사원형 (목적)", "mean": "…하기 위해", "ex": "They should book to enter the park.", "exk": "그들은 공원에 들어가기 위해 예약해야 한다."}], "build": [{"k": "그 공원은 방문객들이 쓰레기를 가져가게 한다.", "t": ["The park", "makes", "visitors", "take", "their trash."]}, {"k": "그들은 공원에 들어가기 위해 예약해야 한다.", "t": ["They", "should book", "to enter", "the park."]}], "choose": [{"k": "코치는 우리를 빨리 달리게 했다.", "pre": "The coach made us", "post": "fast.", "a": "run", "o": ["run", "to run", "running"]}, {"k": "엄마는 내 여동생에게 저녁을 요리하게 했다.", "pre": "Mom had my sister", "post": "dinner.", "a": "cook", "o": ["cook", "to cook", "cooking"]}], "bridge": "make, have, let은 '~가 …하게 하다' 삼총사! 사람 뒤에 to 없이 동사원형을 써요. 6과의 want, ask(사람 + to + 동사원형)와 헷갈리지 마세요. 그리고 First, Second, Third는 6과에서 배운 순서 표현이에요!"}, "qs": [{"q": "What should visitors do to enter the park?", "k": "방문객들은 공원에 들어가기 위해 무엇을 해야 하나요?", "line": "They should ___ to enter the park.", "blanks": [{"a": "book", "o": ["book", "hike", "leave", "hunt"]}]}, {"q": "What does the park make visitors do?", "k": "그 공원은 방문객들에게 무엇을 하게 하나요?", "line": "The park makes visitors ___ their trash with them.", "blanks": [{"a": "take", "o": ["take", "to take", "taking", "leave"]}]}], "script": "우리 파트는 토레스 델 파이네 국립 공원이 자연을 지키려는 노력이야. 첫째, 방문객 수를 통제해서 예약을 해야 들어갈 수 있어. 둘째, 일부 산책로만 하이킹할 수 있게 열어 둬. 셋째, 방문객이 떠날 때 자기 쓰레기를 가져가게 해. 그리고 공원 안 호텔은 플라스틱을 쓰지 않고 친환경 제품만 써.", "key": "makes visitors take", "keyk": "방문객들이 …을 가져가게 하다", "keyx": "The park makes visitors take their trash with them."}, "C": {"title": "Big Five를 찾아서: 크루거 국립 공원", "page": "126쪽", "park": "Kruger", "sents": [["Discovering the Big Five – Kruger National Park", "<u>Have you heard about</u> the Big Five?", "Big Five에 대해 들어 본 적이 있나요?"], ["Discovering the Big Five – Kruger National Park", "They are lions, leopards, elephants, rhinos, and buffaloes.", "그것들은 사자, 표범, 코끼리, 코뿔소, 그리고 버팔로입니다."], ["Discovering the Big Five – Kruger National Park", "You can see them all in Kruger National Park in South Africa.", "여러분은 남아프리카 공화국의 크루거 국립 공원에서 그것들을 모두 볼 수 있습니다."], ["Discovering the Big Five – Kruger National Park", "Many wild animals move around this park freely.", "많은 야생 동물들이 이 공원을 자유롭게 돌아다닙니다."], ["Discovering the Big Five – Kruger National Park", "If you are lucky, you can see rhinos which are sleeping under baobab trees.", "운이 좋으면, 바오밥 나무 아래에서 자고 있는 코뿔소를 볼 수 있습니다."], ["Discovering the Big Five – Kruger National Park", "However, the Big Five are in danger <u>because of</u> too much hunting.", "하지만 Big Five는 지나친 사냥 때문에 위험에 처해 있습니다."]], "words": [["leopard", "표범"], ["rhino", "코뿔소"], ["buffalo", "버팔로, 물소"], ["elephant", "코끼리"], ["wild", "야생의"], ["move around", "돌아다니다"], ["freely", "자유롭게"], ["lucky", "운이 좋은"], ["baobab tree", "바오밥 나무"], ["in danger", "위험에 처한"], ["because of", "~ 때문에"], ["hunting", "사냥"]], "grammar": {"patterns": [{"form": "Have you heard about ~?", "mean": "~에 대해 들어 본 적이 있나요? (경험 묻기)", "ex": "Have you heard about the Big Five?", "exk": "Big Five에 대해 들어 본 적이 있나요?"}, {"form": "because of + 명사", "mean": "~ 때문에", "ex": "The Big Five are in danger because of too much hunting.", "exk": "Big Five는 지나친 사냥 때문에 위험에 처해 있다."}], "build": [{"k": "Big Five에 대해 들어 본 적이 있나요?", "t": ["Have", "you", "heard", "about", "the Big Five?"]}, {"k": "Big Five는 지나친 사냥 때문에 위험에 처해 있다.", "t": ["The Big Five", "are", "in danger", "because of", "too much hunting."]}], "choose": [{"k": "비 때문에 나는 밖에 나갈 수 없다.", "pre": "I can't go out", "post": "the rain.", "a": "because of", "o": ["because of", "because", "so"], "h": "because 뒤에는 문장(주어 + 동사), because of 뒤에는 명사가 와요."}, {"k": "국립 공원 여권에 대해 들어 본 적이 있니?", "pre": "", "post": "you heard about a national park passport?", "a": "Have", "o": ["Have", "Did", "Are"], "h": "heard와 짝이 되는 말을 찾아요. 경험을 물을 때는 Have you + 과거분사 ~?"}], "bridge": "이 단원의 핵심 문법 make, let과 It ~ to는 A, B 파트 친구에게 배워요. 대신 우리 파트의 because of와 Have you heard about ~?을 친구들에게 꼭 알려 주세요."}, "qs": [{"q": "What are the Big Five?", "k": "Big Five는 무엇인가요?", "line": "They are lions, ___, elephants, rhinos, and buffaloes.", "blanks": [{"a": "leopards", "o": ["leopards", "tigers", "bears", "monkeys"]}]}, {"q": "Why are the Big Five in danger?", "k": "Big Five는 왜 위험에 처해 있나요?", "line": "They are in danger because of too much ___.", "blanks": [{"a": "hunting", "o": ["hunting", "trash", "plastic", "rain"]}]}], "script": "우리 파트는 남아프리카 공화국 크루거 국립 공원의 Big Five 이야기야. Big Five는 사자, 표범, 코끼리, 코뿔소, 버팔로야. 이 공원에서는 많은 야생 동물이 자유롭게 돌아다니고, 운이 좋으면 바오밥 나무 아래에서 자는 코뿔소도 볼 수 있어. 하지만 Big Five는 지나친 사냥 때문에 위험에 처해 있어.", "key": "Have you heard about ~? / because of", "keyk": "~에 대해 들어 본 적 있니? / ~ 때문에", "keyx": "The Big Five are in danger because of too much hunting."}, "D": {"title": "Big Five를 지키는 노력과 국립 공원의 의미", "page": "126~127쪽", "park": "Kruger", "sents": [["Discovering the Big Five – Kruger National Park", "<u>To protect</u> the Big Five, the park has been a \"no-hunting\" area from the start.", "Big Five를 보호하기 위해, 그 공원은 처음부터 '사냥 금지' 구역이었습니다."], ["Discovering the Big Five – Kruger National Park", "These days, drones and helicopters <u>are used to monitor</u> hunting activities.", "요즘에는 사냥 활동을 감시하기 위해 드론과 헬리콥터가 사용됩니다."], ["Discovering the Big Five – Kruger National Park", "Also, the park runs many nature volunteer programs.", "또한, 그 공원은 많은 자연 자원봉사 프로그램을 운영합니다."], ["Discovering the Big Five – Kruger National Park", "Volunteers monitor signs of illegal hunting activities and remove animal traps.", "자원봉사자들은 불법 사냥 활동의 징후를 감시하고 동물 덫을 제거합니다."], ["National Parks", "National parks preserve the Earth's past, present, and future.", "국립 공원은 지구의 과거, 현재, 그리고 미래를 보존합니다."], ["National Parks", "Thanks to them, future generations will be able to experience many natural wonders.", "그곳들 덕분에, 미래 세대도 많은 자연의 경이로움을 경험할 수 있을 것입니다."]], "words": [["protect", "보호하다"], ["from the start", "처음부터"], ["drone", "드론"], ["helicopter", "헬리콥터"], ["monitor", "감시하다"], ["run", "운영하다"], ["volunteer", "자원봉사자, 자원봉사의"], ["sign", "징후, 흔적"], ["illegal", "불법적인"], ["remove", "제거하다"], ["trap", "덫"], ["present", "현재"], ["generation", "세대"], ["natural wonder", "자연의 경이"]], "grammar": {"patterns": [{"form": "To + 동사원형 ~, 문장", "mean": "…하기 위해 (목적)", "ex": "To protect the Big Five, the park has been a no-hunting area.", "exk": "Big Five를 보호하기 위해, 그 공원은 사냥 금지 구역이었다."}, {"form": "be동사 + 과거분사 (+ to + 동사원형)", "mean": "…되다 (수동태) / …하기 위해 사용되다", "ex": "Drones and helicopters are used to monitor hunting activities.", "exk": "드론과 헬리콥터는 사냥 활동을 감시하기 위해 사용된다."}], "build": [{"k": "Big Five를 보호하기 위해, 그 공원은 사냥 금지 구역이었다.", "t": ["To protect", "the Big Five,", "the park", "has been", "a no-hunting area."]}, {"k": "드론은 사냥을 감시하기 위해 사용된다.", "t": ["Drones", "are", "used", "to monitor", "hunting."]}], "choose": [{"k": "동물을 보호하기 위해, 우리는 규칙이 필요하다.", "pre": "", "post": "protect animals, we need rules.", "a": "To", "o": ["To", "For", "It"], "h": "'…하기 위해'는 To + 동사원형으로 문장을 시작해요."}, {"k": "드론은 사냥을 감시하기 위해 사용된다.", "pre": "Drones are", "post": "to monitor hunting.", "a": "used", "o": ["used", "use", "using"], "h": "'사용된다'는 be동사 + 과거분사(used)예요."}], "bridge": "문장 맨 앞의 To protect(…하기 위해)와 A 파트의 It is exciting to walk(걷는 것은)를 비교해 보세요. 둘 다 to + 동사원형이지만 뜻이 달라요!"}, "qs": [{"q": "What are drones and helicopters used for?", "k": "드론과 헬리콥터는 무엇을 위해 사용되나요?", "line": "They are used to monitor ___ activities.", "blanks": [{"a": "hunting", "o": ["hunting", "volunteer", "hiking", "cooking"]}]}, {"q": "What do volunteers do?", "k": "자원봉사자들은 무엇을 하나요?", "line": "They monitor signs of illegal hunting and remove animal ___ .", "blanks": [{"a": "traps", "o": ["traps", "trash", "trails", "products"]}]}], "script": "우리 파트는 크루거 국립 공원이 Big Five를 지키는 방법과 국립 공원의 의미야. 이 공원은 처음부터 사냥 금지 구역이었고, 요즘에는 드론과 헬리콥터로 사냥을 감시해. 자원봉사자들은 불법 사냥의 흔적을 살피고 동물 덫을 없애. 국립 공원은 지구의 과거, 현재, 미래를 지켜 주고, 그 덕분에 미래 세대도 자연의 경이로움을 경험할 수 있어.", "key": "To protect / are used to monitor", "keyk": "…을 보호하기 위해 / 감시하기 위해 사용된다", "keyx": "Drones and helicopters are used to monitor hunting activities."}}, "report": [{"p": "A", "title": "Torres del Paine · 자연", "items": [{"id": "ra1", "pre": "국립 공원은 자연을 (  )하기 위한 특별한 장소이다.", "a": "보존", "o": ["보존", "개발", "관광", "사냥"]}, {"id": "ra2", "pre": "It is famous for its (  ) weather.", "a": "dynamic", "o": ["dynamic", "icy", "single", "natural"], "en": true}, {"id": "ra3", "pre": "Mountains, (  ), and even a big ice field are found.", "a": "lakes", "o": ["lakes", "hotels", "trails", "rhinos"], "en": true}, {"id": "ra4", "pre": "One of the most wonderful (  ) in Chile is here.", "a": "glaciers", "o": ["glaciers", "leopards", "species", "products"], "en": true}], "emo": "Torres del Paine", "emoq": "이 파트의 국립 공원"}, {"p": "B", "title": "Torres del Paine · 보존 노력", "items": [{"id": "rb1", "pre": "The park is working hard to (  ) its natural beauty.", "a": "preserve", "o": ["preserve", "control", "enter", "leave"], "en": true}, {"id": "rb2", "pre": "Visitors should (  ) to enter the park.", "a": "book", "o": ["book", "hike", "hunt", "run"], "en": true}, {"id": "rb3", "pre": "The park makes visitors take their (  ) with them.", "a": "trash", "o": ["trash", "traps", "views", "stamps"], "en": true}, {"id": "rb4", "pre": "The hotels only use (  ) products.", "a": "eco-friendly", "o": ["eco-friendly", "plastic", "illegal", "dynamic"], "en": true}], "emo": "Torres del Paine", "emoq": "이 파트의 국립 공원"}, {"p": "C", "title": "Kruger · Big Five", "items": [{"id": "rc1", "pre": "People can see lions, (  ), elephants, rhinos, and buffaloes.", "a": "leopards", "o": ["leopards", "tigers", "glaciers", "drones"], "en": true}, {"id": "rc2", "pre": "Kruger National Park is in (  ).", "a": "South Africa", "o": ["South Africa", "Chile", "Korea", "South America"], "en": true}, {"id": "rc3", "pre": "If you are lucky, you can see rhinos sleeping under (  ) trees.", "a": "baobab", "o": ["baobab", "pine", "apple", "cherry"], "en": true}, {"id": "rc4", "pre": "The Big Five are in danger because of too much (  ).", "a": "hunting", "o": ["hunting", "hiking", "weather", "plastic"], "en": true}], "emo": "Kruger", "emoq": "이 파트의 국립 공원"}, {"p": "D", "title": "Kruger · 보호 노력", "items": [{"id": "rd1", "pre": "Drones and (  ) are used to monitor hunting activities.", "a": "helicopters", "o": ["helicopters", "buffaloes", "hotels", "volunteers"], "en": true}, {"id": "rd2", "pre": "The park runs nature (  ) programs.", "a": "volunteer", "o": ["volunteer", "hunting", "cooking", "plastic"], "en": true}, {"id": "rd3", "pre": "Volunteers remove animal (  ).", "a": "traps", "o": ["traps", "trash", "trails", "signs"], "en": true}, {"id": "rd4", "pre": "National parks preserve the Earth's past, (  ), and future.", "a": "present", "o": ["present", "gift", "nature", "species"], "en": true}], "emo": "Kruger", "emoq": "이 파트의 국립 공원"}], "emotions": [["Torres del Paine", "칠레"], ["Kruger", "남아프리카 공화국"]], "gramq": [{"k": "그들은 우리를 밖에서 기다리게 했다.", "pre": "They made us", "post": "outside.", "a": "wait", "o": ["wait", "to wait"], "type": "mhl"}, {"k": "나는 남동생이 내 자전거를 빌려 가게 해 주었다.", "pre": "I let my brother", "post": "my bike.", "a": "borrow", "o": ["borrow", "to borrow"], "type": "mhl"}, {"k": "부장은 직원들에게 보고서를 끝내게 했다.", "pre": "The manager had the staff", "post": "the report.", "a": "finish", "o": ["finish", "finishing"], "type": "mhl"}, {"k": "부모님은 내가 친구들과 캠핑을 가도록 허락하셨다.", "pre": "My parents let me", "post": "camping with my friends.", "a": "go", "o": ["go", "to go"], "type": "mhl"}, {"k": "보드게임을 하는 것은 재미있다.", "pre": "It is fun", "post": "board games.", "a": "to play", "o": ["play", "to play"], "type": "it"}, {"k": "매일 밤 충분한 잠을 자는 것은 중요하다.", "pre": "It is important", "post": "enough sleep every night.", "a": "to get", "o": ["gets", "to get"], "type": "it"}, {"k": "이 수학 문제를 푸는 것은 어렵다.", "pre": "", "post": "is hard to solve this math problem.", "a": "It", "o": ["It", "That"], "type": "it"}, {"k": "미래를 위해 돈을 모으는 것은 필요하다.", "pre": "It is necessary", "post": "money for the future.", "a": "to save", "o": ["saving", "to save"], "type": "it"}], "vocabq": [["to keep something safe so it does not change or get hurt", "보존하다", "preserve"], ["a large mass of ice that moves very slowly", "빙하", "glacier"], ["changing a lot and full of energy", "역동적인", "dynamic"], ["to arrange to have a seat or a room in advance", "예약하다", "book"], ["a path for walking in a park or the mountains", "산책로", "trail"], ["not harmful to the environment", "친환경적인", "eco-friendly"], ["a large wild cat with yellow fur and black spots", "표범", "leopard"], ["a large animal with one or two horns on its nose", "코뿔소", "rhino"], ["the activity of chasing and killing wild animals", "사냥", "hunting"], ["to watch something carefully for some time", "감시하다", "monitor"], ["not allowed by the law", "불법적인", "illegal"], ["a thing used for catching animals", "덫", "trap"], ["a group of animals or plants of the same kind", "종", "species"], ["hard work you do to get something", "노력", "effort"]], "readq": [{"p": "A", "q": "What do national parks keep safe?", "k": "국립 공원은 무엇을 안전하게 지키나요?", "a": "many animal and plant species", "o": ["many animal and plant species", "many hotels and roads", "old buildings", "big cities"]}, {"p": "A", "q": "Where is Torres del Paine National Park?", "k": "토레스 델 파이네 국립 공원은 어디에 있나요?", "a": "in Chile", "o": ["in Chile", "in South Africa", "in Korea", "in the U.S."]}, {"p": "A", "q": "What is Torres del Paine famous for?", "k": "토레스 델 파이네는 무엇으로 유명한가요?", "a": "its dynamic weather", "o": ["its dynamic weather", "its big animals", "its old trees", "its hotels"]}, {"p": "A", "q": "In Torres del Paine, it can be sunny, rainy, or snowy in a single day.", "k": "본문과 일치하면 True, 일치하지 않으면 False", "a": "True", "o": ["True", "False"]}, {"p": "B", "q": "What should visitors do to enter Torres del Paine?", "k": "토레스 델 파이네에 들어가려면 방문객은 무엇을 해야 하나요?", "a": "They should book.", "o": ["They should book.", "They should bring plastic.", "They should hunt animals.", "They should walk on every trail."]}, {"p": "B", "q": "Which is NOT an effort of Torres del Paine?", "k": "토레스 델 파이네의 노력이 아닌 것은?", "a": "It lets hotels use plastic.", "o": ["It lets hotels use plastic.", "It controls the number of visitors.", "It opens only some trails.", "It makes visitors take their trash."]}, {"p": "C", "q": "What are the Big Five?", "k": "Big Five는 무엇인가요?", "a": "lions, leopards, elephants, rhinos, and buffaloes", "o": ["lions, leopards, elephants, rhinos, and buffaloes", "lions, tigers, bears, wolves, and deer", "elephants, monkeys, birds, snakes, and fish", "five big trees in Africa"]}, {"p": "C", "q": "You can always see rhinos which are sleeping under baobab trees in Kruger National Park.", "k": "본문과 일치하면 True, 일치하지 않으면 False", "a": "False", "o": ["True", "False"], "why": "If you are lucky(운이 좋으면) 볼 수 있다고 했어요."}, {"p": "C", "q": "Why are the Big Five in danger?", "k": "Big Five는 왜 위험에 처해 있나요?", "a": "because of too much hunting", "o": ["because of too much hunting", "because of dynamic weather", "because of plastic", "because of volunteers"]}, {"p": "D", "q": "Why are drones and helicopters used in Kruger National Park?", "k": "크루거 국립 공원에서 드론과 헬리콥터는 왜 사용되나요?", "a": "to monitor hunting activities", "o": ["to monitor hunting activities", "to help animals find food", "to take pictures for visitors", "to carry trash"]}, {"p": "D", "q": "What do volunteers do in the nature volunteer programs?", "k": "자연 자원봉사 프로그램에서 자원봉사자들은 무엇을 하나요?", "a": "They monitor signs of illegal hunting and remove animal traps.", "o": ["They monitor signs of illegal hunting and remove animal traps.", "They hunt the Big Five.", "They build new hotels.", "They sell eco-friendly products."]}, {"p": "전체", "q": "What is the main idea of the whole text?", "k": "글 전체의 주제로 알맞은 것은?", "a": "National parks preserve nature for the past, present, and future.", "o": ["National parks preserve nature for the past, present, and future.", "Hunting is a popular sport in Africa.", "Chile has the best weather in the world.", "Hotels in national parks are very expensive."]}], "rules": [{"id": "r1", "pre": "National parks let people", "post": "the beauty of nature.", "a": "enjoy", "o": ["enjoy", "to enjoy", "enjoying"]}, {"id": "r2", "pre": "The park makes visitors", "post": "their trash with them.", "a": "take", "o": ["take", "to take", "taking"]}, {"id": "r3", "pre": "It is exciting", "post": "on the glacier.", "a": "to walk", "o": ["walk", "to walk", "walking"]}]};
+const PARTS = DATA.parts, ORDER = ['A','B','C','D'];
+const PCOLOR = {A:'--partA', B:'--partB', C:'--partC', D:'--partD'};
+const EXPERT_STEPS = [['Words','단어'],['Read','본문'],['Grammar','문법'],['Mission','미션'],['Teach','설명']];
+const HOME_STEPS = [['Listen','설명 듣기'],['Fact File','공원 정리'],['Grammar','문법 퀴즈'],['Words','어휘 퀴즈'],['Reading','독해 퀴즈'],['Guide','모둠 미션']];
+
+let S = {done:{}, stars:0, home:false};
+try{ const s = JSON.parse(localStorage.getItem('l7-jigsaw')||'null'); if(s) S = Object.assign(S, s); }catch(e){}
+function saveS(){ try{ localStorage.setItem('l7-jigsaw', JSON.stringify(S)); }catch(e){} }
+let H = {heard:{}, rep:{}, emo:{}, gram:{}, vocab:{i:0, score:0, done:false, order:null}, read:{}, readMiss:{}, rules:{}, own:'', park:''};
+try{ const h = JSON.parse(localStorage.getItem('l7-home')||'null'); if(h) H = Object.assign(H, h); }catch(e){}
+function saveH(){ try{ localStorage.setItem('l7-home', JSON.stringify(H)); }catch(e){} }
+const PROG = {};
+function prog(p){ return PROG[p] || (PROG[p] = {showKo:false, words:new Set(), wq:{i:0, list:null, done:false}, build:{}, choose:{}, q:{}}); }
+let view = {name:'start'};
+const app = document.getElementById('app');
+
+const canSpeak = 'speechSynthesis' in window;
+
+let RATE = 1; try { RATE = +(localStorage.getItem('l7-rate') || 1); } catch(e) {}
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const canRec = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+const canMic = !!SR || canRec;
+let MICOK = new Set(); try { MICOK = new Set(JSON.parse(localStorage.getItem('l7-mic') || '[]')); } catch(e) {}
+const plain = s => String(s).replace(/<[^>]+>/g,'');
+const ttsBtn = t => canSpeak ? `<button class="mini tts" data-tts="${esc(plain(t))}">▶ 듣기</button>` : '';
+const micBtn = t => canMic ? `<button class="mini mic" data-mic="${esc(plain(t))}">🎤 말하기</button>` : '';
+const normW = s => s.toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9' ]+/g,' ').split(/\s+/).filter(Boolean);
+function scoreSpeech(target, heard){
+  const T = normW(target), Hh = normW(heard); let j = 0; const hit = [];
+  T.forEach(w => { const k = Hh.indexOf(w, j); if(k >= 0){ hit.push(true); j = k + 1; } else hit.push(Hh.includes(w)); });
+  return { words: target.split(/\s+/), hit, pct: T.length ? Math.round(hit.filter(Boolean).length / T.length * 100) : 0 };
+}
+function resBox(btn){
+  const host = btn.closest('.word, .sent, .pattern, .fill, .q, .keycard, .poster, .buildbox, .panel') || btn.parentElement;
+  let box = host.querySelector(':scope > .mres');
+  if(!box){ box = document.createElement('div'); box.className = 'mres'; host.appendChild(box); }
+  return box;
+}
+let REC = null;
+function stopMic(){ if(REC){ try { REC.stop(); } catch(e) {} REC = null; } app.querySelectorAll('.mic.on').forEach(b => { b.classList.remove('on'); b.textContent = '🎤 말하기'; }); }
+function startMic(btn){
+  const target = btn.dataset.mic, box = resBox(btn);
+  if(btn.classList.contains('on')){ stopMic(); return; }
+  stopMic(); if(canSpeak) speechSynthesis.cancel(); stopFollow && FOLLOW.on && stopFollow();
+  btn.classList.add('on');
+  if(SR){
+    btn.textContent = '● 듣고 있어요…';
+    box.innerHTML = '<span>영어로 또박또박 읽어 보세요.</span>';
+    const r = new SR(); r.lang = 'en-US'; r.interimResults = false; r.maxAlternatives = 3; REC = r;
+    let got = false;
+    r.onresult = e => {
+      got = true;
+      const alts = [...e.results[0]].map(a => a.transcript);
+      const best = alts.map(a => [a, scoreSpeech(target, a)]).sort((x,y) => y[1].pct - x[1].pct)[0];
+      const sc = best[1];
+      const msg = sc.pct >= 85 ? 'Excellent! 아주 정확해요.' : sc.pct >= 60 ? 'Good! 빨간 단어만 다시 연습해요.' : '조금 더 천천히, 한 번 더 해 볼까요?';
+      box.innerHTML = `<span class="sc">${sc.pct}점 · ${msg}</span>
+        <span class="tw">${sc.words.map((w,i) => `<span class="${sc.hit[i]?'g':'r'}">${esc(w)}</span>`).join(' ')}</span>
+        <span class="note">내가 말한 것: <span class="en">${esc(best[0])}</span></span>
+        <span>${ttsBtn(target)} <button class="mini mic" data-mic="${esc(target)}">🎤 다시 말하기</button></span>`;
+      if(sc.pct >= 60 && !MICOK.has(target)){ MICOK.add(target); S.stars++; saveS(); try { localStorage.setItem('l7-mic', JSON.stringify([...MICOK])); } catch(e) {} updMicCount(); }
+    };
+    r.onerror = e => { box.innerHTML = e.error === 'not-allowed' || e.error === 'service-not-allowed'
+        ? '마이크를 쓸 수 없어요. 주소창 옆 자물쇠에서 마이크를 허용하거나, 선생님이 알려 준 주소(GitHub)로 열어 주세요.'
+        : e.error === 'no-speech' ? '소리가 들리지 않았어요. 마이크 가까이에서 다시 말해 보세요.' : '다시 한 번 눌러 말해 보세요.'; };
+    r.onend = () => { btn.classList.remove('on'); btn.textContent = '🎤 말하기'; REC = null; if(!got && !box.textContent.trim()) box.innerHTML = '다시 한 번 눌러 말해 보세요.'; };
+    try { r.start(); } catch(e) { box.textContent = '다시 한 번 눌러 말해 보세요.'; }
+  } else {
+    btn.textContent = '■ 녹음 멈추기';
+    box.innerHTML = '<span>녹음 중이에요. 다 읽으면 버튼을 한 번 더 눌러요.</span>';
+    navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
+      const mr = new MediaRecorder(stream), chunks = []; REC = mr;
+      mr.ondataavailable = e => chunks.push(e.data);
+      mr.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const url = URL.createObjectURL(new Blob(chunks, {type: mr.mimeType || 'audio/webm'}));
+        box.innerHTML = `<span class="sc">내 목소리와 원어민 소리를 비교해 보세요.</span><audio controls src="${url}"></audio>
+          <span>${ttsBtn(target)} <button class="mini mic" data-mic="${esc(target)}">🎤 다시 녹음</button></span>`;
+        if(!MICOK.has(target)){ MICOK.add(target); try { localStorage.setItem('l7-mic', JSON.stringify([...MICOK])); } catch(e) {} updMicCount(); }
+      };
+      mr.start(); setTimeout(() => { if(REC === mr) stopMic(); }, 15000);
+    }).catch(() => { btn.classList.remove('on'); btn.textContent = '🎤 말하기'; box.innerHTML = '마이크를 쓸 수 없어요. 마이크를 허용하거나, 선생님이 알려 준 주소(GitHub)로 열어 주세요.'; });
+  }
+}
+function updMicCount(){
+  const el = document.getElementById('micCount'); if(!el || view.name !== 'expert') return;
+  const D = PARTS[view.part]; el.textContent = `🎤 ${D.sents.filter(s => MICOK.has(plain(s[1]))).length}/${D.sents.length}`;
+}
+document.addEventListener('click', e => {
+  const m = e.target.closest('[data-mic]'); if(m){ startMic(m); return; }
+  const t = e.target.closest('[data-tts]'); if(t){ sayIt(t.dataset.tts, t.dataset.tts.split(' ').length <= 3 ? 0.7 : 0.8); return; }
+  const sp = e.target.closest('[data-speed]'); if(sp){ RATE = RATE < 1 ? 1 : 0.72; try { localStorage.setItem('l7-rate', RATE); } catch(err) {} draw(); toast(RATE < 1 ? '천천히 읽어 줘요.' : '보통 속도로 읽어 줘요.'); }
+});
+const FOLLOW = {on:false, p:null, i:0, t:null};
+function stopFollow(){ FOLLOW.on = false; clearTimeout(FOLLOW.t); if(canSpeak) speechSynthesis.cancel(); app.querySelectorAll('.sent.now').forEach(x => x.classList.remove('now')); }
+function startFollow(p){
+  stopFollow(); FOLLOW.on = true; FOLLOW.p = p; FOLLOW.i = 0; draw(); stepFollow();
+}
+function stepFollow(){
+  if(!FOLLOW.on) return;
+  const D = PARTS[FOLLOW.p];
+  if(FOLLOW.i >= D.sents.length){ FOLLOW.on = false; draw(); toast('따라 읽기 끝! 잘했어요.'); return; }
+  app.querySelectorAll('.sent.now').forEach(x => x.classList.remove('now'));
+  const el = app.querySelector(`.sent[data-si="${FOLLOW.i}"]`);
+  if(el){ el.classList.add('now'); el.scrollIntoView({block:'center', behavior:'smooth'}); }
+  const text = D.sents[FOLLOW.i][1].replace(/<[^>]+>/g,'');
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.78 * RATE;
+  const v = speechSynthesis.getVoices().find(v => /en[-_]US/i.test(v.lang)); if(v) u.voice = v;
+  const words = text.split(/\s+/).length;
+  u.onend = () => { if(!FOLLOW.on) return; FOLLOW.t = setTimeout(() => { FOLLOW.i++; stepFollow(); }, 900 + words * 420); };
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+let toastT = null;
+function toast(html){ const t = document.getElementById('toast'); t.innerHTML = html; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2200); }
+const FIRST = {};
+function wordRe(w){
+  let base = w.replace(/ \(.*\)$/,'');
+  if(!/ /.test(base) && base.length > 4 && /e$/.test(base)) base = base.slice(0,-1);
+  base = base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return new RegExp('\\b(' + base + '[a-z]*)', 'i');
+}
+function markWords(p, html, si){
+  const W = PARTS[p].words;
+  if(!FIRST[p]){ FIRST[p] = W.map(w => { const re = wordRe(w[0]); return PARTS[p].sents.findIndex(s => re.test(s[1].replace(/<[^>]+>/g,''))); }); }
+  let out = html;
+  W.forEach((w, wi) => {
+    if(FIRST[p][wi] !== si) return;
+    const re = wordRe(w[0]);
+    const parts = out.split(/(<[^>]+>)/); let done = false;
+    out = parts.map(seg => { if(done || seg.startsWith('<')) return seg; if(re.test(seg)){ done = true; return seg.replace(re, `<span class="vw" data-w="${wi}">$1</span>`); } return seg; }).join('');
+  });
+  return out;
+}
+
+function sayIt(html, rate){
+  if(!canSpeak) return;
+  const t = String(html).replace(/<[^>]+>/g,'');
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = (rate || 0.8) * RATE;
+  const v = speechSynthesis.getVoices().find(v => /en[-_]US/i.test(v.lang)); if(v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function mix(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function paint(tokenVar, softPct){
+  app.style.setProperty('--pc', `var(${tokenVar})`);
+  app.style.setProperty('--soft', `color-mix(in srgb, var(${tokenVar}) ${softPct||13}%, var(--surface))`);
+}
+function shake(b){ b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong'); }
+function headBar(sub){
+  return `<div class="topbar"><span class="ls">Lesson 7</span><span class="sub">${sub}</span>
+    ${canSpeak ? `<button class="speed" data-speed aria-pressed="${RATE<1}">${RATE<1?'🐢 천천히':'🔊 보통 속도'}</button>` : ''}
+    ${view.name!=='start' ? '<button class="homebtn" data-gostart>처음 화면</button>' : ''}</div>`;
+}
+function heroSVG(){
+  return `<div class="hero"><svg viewBox="0 0 900 230" aria-hidden="true">
+    <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2a6e"/><stop offset=".45" stop-color="#c8553d"/><stop offset=".8" stop-color="#f2a65a"/></linearGradient></defs>
+    <rect width="900" height="230" fill="url(#sky)"/>
+    <ellipse cx="300" cy="70" rx="260" ry="22" fill="#5a2f5e" opacity=".55"/><ellipse cx="680" cy="110" rx="240" ry="18" fill="#7a3550" opacity=".45"/>
+    <path d="M0 230 L120 150 L170 175 L260 95 L300 120 L330 60 L370 118 L430 140 L520 70 L560 110 L640 150 L720 105 L800 160 L900 130 L900 230 Z" fill="#2b2240"/>
+    <path d="M300 120 L330 60 L370 118 L350 108 L330 82 Z M500 88 L520 70 L560 110 L540 100 Z" fill="#f3e6e0" opacity=".85"/>
+    <path d="M0 230 L90 200 L200 215 L330 190 L470 212 L600 196 L760 214 L900 200 L900 230 Z" fill="#1b1830"/>
+  </svg><div class="tt"><div class="w1">Wild</div><div class="w2">Wonderlands</div></div>
+  <div class="cap">Natural Wonders · Jigsaw Reading</div></div>`;
+}
+function footSVG(p){
+  const d = S.done[p];
+  const col = d ? `var(${PCOLOR[p]})` : 'var(--dirt)';
+  const park = PARTS[p].park === 'Kruger' ? 'KRUGER' : 'TORRES';
+  return `<svg viewBox="0 0 72 72" aria-hidden="true" style="transform:rotate(${d?-8:0}deg)">
+    <circle cx="36" cy="36" r="32" fill="none" stroke="${col}" stroke-width="3" ${d?'':'stroke-dasharray="5 5"'}/>
+    <circle cx="36" cy="36" r="25" fill="none" stroke="${col}" stroke-width="1.5"/>
+    ${d ? `<path d="M18 44 L30 26 L37 36 L44 28 L55 44 Z" fill="${col}"/><text x="36" y="56" text-anchor="middle" font-size="7" font-weight="700" fill="${col}" font-family="Lexend,sans-serif">${park}</text>`
+        : `<text x="36" y="42" text-anchor="middle" font-size="16" font-weight="700" fill="${col}" font-family="Lexend,sans-serif">${p}</text>`}
+  </svg>`;
+}
+function go(v){ view = v; draw(); window.scrollTo(0,0); }
+function draw(){
+  if(typeof stopMic === 'function') stopMic();
+  if(canSpeak && !FOLLOW.on) speechSynthesis.cancel();
+  if(FOLLOW.on && !(view.name==='expert' && view.step===1 && view.part===FOLLOW.p)) stopFollow();
+  if(view.name === 'start') drawStart();
+  else if(view.name === 'expert') drawExpert();
+  else drawHome();
+  app.querySelectorAll('[data-gostart]').forEach(b => b.onclick = () => go({name:'start'}));
+}
+
+/* ---------- start ---------- */
+function drawStart(){
+  paint('--main');
+  const n = ORDER.filter(p => S.done[p]).length;
+  app.innerHTML = `${headBar('Natural Wonders · 직소 리딩')}
+  ${heroSVG()}
+  <div class="panel">
+    <div class="feet">${ORDER.map(p => `<div class="foot">${footSVG(p)}<span style="color:var(${PCOLOR[p]})">Expert ${p}</span></div>`).join('')}</div>
+    <p class="note" style="text-align:center">파트를 끝낼 때마다 국립 공원 여권에 도장이 찍혀요. 지금까지 <b>${n}</b>/4 완료</p>
+  </div>
+  <div class="panel">
+    <h2>1단계 · 전문가 그룹 <small class="en">Expert Group</small></h2>
+    <p class="note">내가 맡은 파트(A, B, C, D)를 눌러 공부하세요. 단어 → 본문 → 문법 → 미션 → 설명 준비 순서로 해요.</p>
+    <div class="parts">${ORDER.map(p => `<button class="pcard ${S.done[p]?'done':''}" style="--c:var(${PCOLOR[p]})" data-part="${p}">
+      <span class="tag">Expert ${p} · ${PARTS[p].page} · ${PARTS[p].park}</span><span class="t">${PARTS[p].title}</span>
+      <span class="s">${S.done[p] ? '✓ 설명 준비 완료' : '핵심 문법: <span class="en">' + PARTS[p].grammar.patterns.map(x=>x.form).join(' / ') + '</span>'}</span></button>`).join('')}</div>
+  </div>
+  <div class="panel">
+    <h2>2단계 · 홈그룹 <small class="en">Home Group</small></h2>
+    <p class="note">홈그룹으로 돌아와 A → B → C → D 순서로 설명하고, 공원 정리, 문법, 어휘, 독해 퀴즈를 함께 풀어요.</p>
+    <button class="big warm" data-gohome>홈그룹 활동 시작</button>
+  </div>
+  <p class="note" style="text-align:center">기록은 이 기기에만 저장돼요. <button class="mini" id="resetAll">처음부터 다시</button></p>`;
+  app.querySelectorAll('[data-part]').forEach(b => b.onclick = () => go({name:'expert', part:b.dataset.part, step:0}));
+  app.querySelector('[data-gohome]').onclick = () => go({name:'home', step:0});
+  const r = document.getElementById('resetAll'); let armed = false;
+  r.onclick = () => {
+    if(!armed){ armed = true; r.textContent = '한 번 더 누르면 모두 지워져요'; return; }
+    S = {done:{}, stars:0, home:false};
+    H = {heard:{}, rep:{}, emo:{}, gram:{}, vocab:{i:0, score:0, done:false, order:null}, read:{}, readMiss:{}, rules:{}, own:'', park:''};
+    for(const k in PROG) delete PROG[k];
+    saveS(); saveH(); draw();
+  };
+}
+
+function stepsBar(steps, cur, doneFn){
+  return `<div class="steps" style="--n:${steps.length}">${steps.map((s,i) => `<button class="step ${doneFn(i)?'done':''}" aria-current="${i===cur}" data-step="${i}"><b>${s[0]}</b>${s[1]}</button>`).join('')}</div>`;
+}
+function navBar(last){ last = (view.name==='home') ? HOME_STEPS.length-1 : EXPERT_STEPS.length-1;
+  return `<div class="nav">${view.step>0 ? '<button id="prevBtn">← 이전</button>' : ''}${view.step<last ? '<button class="go" id="nextBtn">다음 단계 →</button>' : '<button class="go" data-gostart>처음 화면으로</button>'}</div>`;
+}
+function bindNav(){
+  app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { view.step = +b.dataset.step; draw(); window.scrollTo(0,0); });
+  const n = document.getElementById('nextBtn'); if(n) n.onclick = () => { view.step++; draw(); window.scrollTo(0,0); };
+  const p = document.getElementById('prevBtn'); if(p) p.onclick = () => { view.step--; draw(); window.scrollTo(0,0); };
+}
+
+/* reusable: sentence builder (tap words in order) */
+function buildHTML(id, item, doneMap){
+  const got = doneMap[id] || [];
+  const finished = got.length === item.t.length;
+  const left = item.t.map((w,i)=>({w,i})).filter(x => !got.includes(x.i));
+  const pool = mix(left);
+  return `<div class="q"><span>${esc(item.k)}</span>
+    <div class="built">${got.map(i => `<span>${esc(item.t[i])}</span>`).join('') || '<span class="note" style="border:none;background:none">단어 조각을 순서대로 눌러요</span>'}</div>
+    ${finished ? `<p class="fb ok">완성! ${ttsBtn(item.t.join(' '))} ${micBtn(item.t.join(' '))}</p>`
+      : `<div class="opts">${pool.map(x => `<button class="opt en" data-bid="${id}" data-bi="${x.i}">${esc(x.w)}</button>`).join('')}</div><p class="fb" id="fb-${id}"></p>`}
+  </div>`;
+}
+function bindBuild(items, doneMap, save){
+  app.querySelectorAll('[data-bid]').forEach(b => b.onclick = () => {
+    const id = b.dataset.bid, i = +b.dataset.bi, got = doneMap[id] || (doneMap[id] = []);
+    if(i === got.length){ got.push(i); if(got.length === items[id].t.length){ S.stars++; saveS(); } save && save(); draw(); }
+    else { shake(b); const f = document.getElementById('fb-'+id); f.className='fb no'; f.textContent = '순서를 다시 생각해 봐요. 누가(주어) → 했다(동사) → 누구를 → 무엇을 순서예요.'; }
+  });
+  app.querySelectorAll('[data-saybuild]').forEach(b => b.onclick = () => sayIt(b.dataset.saybuild));
+}
+/* reusable: choose-one blank */
+function fullChoose(item){ return [item.pre, item.a, item.post].filter(Boolean).join(' ').replace(/\s+([.?!,])/g,'$1'); }
+function chooseHTML(id, item, doneMap, hint){
+  const v = doneMap[id];
+  return `<div class="q"><span>${esc(item.k)}</span>
+    <div class="line">${esc(item.pre)} <span class="blank ${v?'ok':''}">${v?esc(item.a):'?'}</span> ${esc(item.post)}</div>
+    ${v ? `<p class="fb ok">정답! ${ttsBtn(fullChoose(item))} ${micBtn(fullChoose(item))}</p>` : `<div class="opts">${mix(item.o).map(o => `<button class="opt en" data-cid="${id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div><p class="fb" id="fb-${id}">${hint||''}</p>`}
+  </div>`;
+}
+function bindChoose(lookup, doneMap, save, wrongMsg){
+  app.querySelectorAll('[data-cid]').forEach(b => b.onclick = () => {
+    const id = b.dataset.cid, item = lookup[id];
+    if(b.dataset.v === item.a){ b.classList.add('right'); doneMap[id] = true; S.stars++; saveS(); save && save(); setTimeout(draw, 320); }
+    else { shake(b); const f = document.getElementById('fb-'+id); f.className='fb no'; f.textContent = typeof wrongMsg === 'function' ? wrongMsg(item) : wrongMsg; }
+  });
+}
+function gramHint(item){
+  if(item.h) return item.h;
+  if(item.type === 'it' || /^to /.test(item.a)) return 'It is + 형용사 + to + 동사원형! 진짜 주어는 뒤의 to + 동사원형이에요.';
+  if(item.a === 'It') return '문장 앞에 가짜 주어 It을 쓰고, 진짜 주어(to + 동사원형)는 뒤로 보내요.';
+  return 'make, have, let 다음 사람 뒤에는 to 없이 동사원형이 와요.';
+}
+
+/* ---------- expert ---------- */
+function drawExpert(){
+  const p = view.part, D = PARTS[p], st = prog(p);
+  paint(PCOLOR[p]);
+  let body = '';
+  if(view.step === 0){
+    const allFlipped = st.words.size === D.words.length;
+    body = `<div class="panel"><h2>① 단어 카드를 눌러 뜻을 확인해요</h2>
+      <p class="note">카드를 누르면 뜻이 보이고 소리가 나와요. (${st.words.size}/${D.words.length})</p>
+      <div class="words">${D.words.map((w,i) => `<div class="word ${st.words.has(i)?'flipped':''}"><button class="wflip" data-w="${i}"><span class="we">${esc(w[0])}</span>${st.words.has(i)?`<span class="wk">${esc(w[1])}</span>`:'<span class="note" style="font-size:.8rem">눌러서 뜻 보기</span>'}</button>
+        <div class="acts">${ttsBtn(w[0])}${micBtn(w[0])}</div></div>`).join('')}</div>
+      ${canSpeak?'<p class="note">▶ 듣기로 발음을 듣고, 🎤 말하기로 소리 내어 읽어 보세요.</p>':''}</div>
+      <div class="panel"><h2>② 단어 퀴즈 <small>뜻을 보고 영어 단어를 골라요</small></h2>${allFlipped ? wordQuizHTML(p) : '<p class="note">카드를 모두 뒤집으면 퀴즈가 열려요.</p>'}</div>`;
+  } else if(view.step === 1){
+    body = `<div class="panel"><h2>문장을 하나씩 읽어 보세요</h2>
+      <p class="note"><b>*</b> 표시 단어를 누르면 뜻이 나와요. <span style="background:linear-gradient(transparent 58%,#ffe066 58%)">형광펜</span> 부분이 우리 파트의 핵심 문법이에요.</p>
+      <div class="tbar">${canSpeak?'<button class="pill listen" id="readAll">🎧 본문 전체 듣기</button>':''}
+        <button class="pill ko" id="allKo" aria-pressed="${st.showKo}">해석</button>
+        <button class="pill hide" id="hideW" aria-pressed="${!!st.hideW}">감추기</button>
+        ${canSpeak?`<button class="pill follow" id="follow" aria-pressed="${!!FOLLOW.on}">${FOLLOW.on?'■ 멈추기':'따라 읽기'}</button>`:''}
+        ${canMic?`<span class="pill badge" id="micCount">🎤 ${D.sents.filter(s => MICOK.has(plain(s[1]))).length}/${D.sents.length}</span>`:''}</div>
+      ${canMic?'<p class="note">문장마다 <b>▶ 듣기</b>로 듣고 <b>🎤 말하기</b>로 따라 읽어 보세요. 맞게 읽은 단어는 초록색, 다시 연습할 단어는 빨간색으로 보여요.</p>':''}
+      <div class="${st.hideW?'hidevw':''}">${D.sents.map((s,i) => {
+        const prev = i>0 ? D.sents[i-1][0] : null;
+        const label = s[0] !== prev ? `<span></span><span class="who hdl">${esc(s[0])}</span>` : '';
+        return `${label ? `<div class="sent" style="border:none;padding:0">${label}</div>` : ''}<div class="sent" data-si="${i}"><span class="n">${i+1}</span><span class="e">${markWords(p, s[1], i)}</span>
+          <div class="k" ${st.showKo?'':'hidden'} data-k="${i}">${esc(s[2])}</div>
+          <div class="acts"><button class="mini" data-ko="${i}">뜻</button>${canSpeak?`<button class="mini tts" data-say="${i}">▶ 듣기</button>`:''}${micBtn(s[1])}</div></div>`;}).join('')}</div></div>`;
+  } else if(view.step === 2){
+    const G = D.grammar;
+    body = `<div class="panel"><h2>① 문법 공식 알아보기</h2>
+      ${G.patterns.map(x => `<div class="pattern"><span class="form">${esc(x.form)}</span><span>${esc(x.mean)}</span><span class="ex">${esc(x.ex)}</span><span class="exk">${esc(x.exk)}</span>
+        <div class="acts">${ttsBtn(x.ex)}${micBtn(x.ex)}</div></div>`).join('')}
+      </div>
+      <div class="panel"><h2>② 본문 문장 만들기 <small>단어 조각을 순서대로 눌러요</small></h2>
+      ${G.build.map((b,i) => buildHTML(p+'b'+i, b, st.build)).join('')}</div>
+      <div class="panel"><h2>③ 알맞은 것 고르기</h2>
+      ${G.choose.map((c,i) => chooseHTML(p+'c'+i, c, st.choose)).join('')}
+      <div class="bridge">${esc(G.bridge)}</div></div>`;
+  } else if(view.step === 3){
+    body = `<div class="panel"><h2>Mission Check <small>우리 전문가끼리 풀기</small></h2>
+      <p class="note">빈칸에 들어갈 말을 골라요. 틀려도 괜찮아요, 다시 고르면 돼요.</p>
+      ${D.qs.map((q,qi) => missionHTML(p,q,qi)).join('')}</div>`;
+  } else {
+    body = `<div class="panel"><h2>홈그룹 친구들에게 이렇게 설명하세요!</h2>
+      <div class="keycard"><span class="note">우리 파트 핵심 표현</span><span class="ke">${esc(D.key)}</span><span>${esc(D.keyk)}</span><span class="kx">${esc(D.keyx)}</span>
+      <div class="acts">${ttsBtn(D.keyx)}${micBtn(D.keyx)}</div></div>
+      <div><p class="note" style="margin-bottom:6px">요약 (소리 내어 읽어 보세요)</p><div class="script">"${esc(D.script)}"</div></div>
+      <div><p class="note" style="margin-bottom:6px">꼭 알려 줄 단어 5개</p>
+        <div class="tools">${D.words.slice(0,5).map(w=>`<button class="chipbtn" ${canSpeak?`data-tts="${esc(w[0])}"`:''}>${canSpeak?'▶ ':''}<span class="en">${esc(w[0])}</span> ${esc(w[1])}</button>`).join('')}</div></div>
+      <div>
+        <label class="check"><input type="checkbox" id="c1" ${st.c1?'checked':''}> 요약을 소리 내어 두 번 읽었어요.</label>
+        ${canMic?`<label class="check" style="cursor:default">🎤 본문 문장 말하기: <b>${D.sents.filter(s => MICOK.has(plain(s[1]))).length}/${D.sents.length}</b> 문장 성공</label>`:''}
+        <label class="check"><input type="checkbox" id="c2" ${st.c2?'checked':''}> 핵심 문법 공식을 친구에게 말할 수 있어요.</label>
+        <label class="check"><input type="checkbox" id="c3" ${st.c3?'checked':''}> 미션 문제의 답을 친구에게 알려 줄 수 있어요.</label>
+      </div>
+      <button class="big" id="finish" style="background:var(--pc)" ${(st.c1&&st.c2&&st.c3)?'':'disabled'}>${S.done[p]?'✓ 전문가 '+p+' 완료!':'전문가 '+p+' 준비 완료'}</button>
+    </div>`;
+  }
+  app.innerHTML = `${headBar('전문가 그룹 · Expert ' + p)}
+    <div class="parthead"><span class="badge">Expert ${p}</span><h1>${esc(D.title)}</h1></div>
+    ${stepsBar(EXPERT_STEPS, view.step, i => expertDone(p,i))}
+    ${body}
+    ${navBar(4)}`;
+  bindNav();
+  if(view.step === 0){
+    app.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { const i = +b.dataset.w; st.words.add(i); sayIt(D.words[i][0], 0.75); draw(); });
+    bindWordQuiz(p);
+  }
+  if(view.step === 1){
+    st.read = true;
+    document.getElementById('allKo').onclick = () => { st.showKo = !st.showKo; draw(); };
+    app.querySelectorAll('[data-ko]').forEach(b => b.onclick = () => { const k = app.querySelector(`[data-k="${b.dataset.ko}"]`); k.hidden = !k.hidden; });
+    app.querySelectorAll('[data-say]').forEach(b => b.onclick = () => sayIt(D.sents[+b.dataset.say][1]));
+    const ra = document.getElementById('readAll'); if(ra) ra.onclick = () => { stopFollow(); sayIt(D.sents.map(s => s[1]).join(' '), 0.78); };
+    document.getElementById('hideW').onclick = () => { st.hideW = !st.hideW; draw(); };
+    const fl = document.getElementById('follow'); if(fl) fl.onclick = () => { if(FOLLOW.on){ stopFollow(); draw(); } else startFollow(p); };
+    app.querySelectorAll('.vw').forEach(v => v.onclick = () => { const w = PARTS[p].words[+v.dataset.w]; toast(`<b>${esc(w[0])}</b> ${esc(w[1])}`); sayIt(w[0], 0.75); });
+  }
+  if(view.step === 2){
+    app.querySelectorAll('[data-sayx]').forEach(b => b.onclick = () => sayIt(b.dataset.sayx));
+    const bl = {}; D.grammar.build.forEach((b,i) => bl[p+'b'+i] = b);
+    bindBuild(bl, st.build);
+    const cl = {}; D.grammar.choose.forEach((c,i) => cl[p+'c'+i] = c);
+    bindChoose(cl, st.choose, null, gramHint);
+  }
+  if(view.step === 3) bindMission(p);
+  if(view.step === 4){
+    const sk = document.getElementById('sayKey'); if(sk) sk.onclick = () => sayIt(D.keyx);
+    ['c1','c2','c3'].forEach(id => document.getElementById(id).onchange = e => { st[id] = e.target.checked; document.getElementById('finish').disabled = !(st.c1&&st.c2&&st.c3); });
+    document.getElementById('finish').onclick = () => { S.done[p] = true; saveS(); go({name:'start'}); };
+  }
+}
+function wordTags(p, html){
+  // show a small Korean hint after key vocabulary that appears in the sentence (first 2 matches)
+  const plain = html.replace(/<[^>]+>/g,'').toLowerCase();
+  const hits = PARTS[p].words.filter(w => { const base = w[0].replace(/ \(.*\)$/,'').toLowerCase(); return plain.includes(base); }).slice(0,2);
+  return hits.map(w => `<span class="wtag">${esc(w[0].replace(/ \(.*\)$/,''))} ${esc(w[1])}</span>`).join('');
+}
+function expertDone(p,i){
+  const st = prog(p), D = PARTS[p];
+  if(i===0) return st.words.size === D.words.length && st.wq.done;
+  if(i===1) return !!st.read;
+  if(i===2) return D.grammar.build.every((b,k) => (st.build[p+'b'+k]||[]).length === b.t.length) && D.grammar.choose.every((c,k) => st.choose[p+'c'+k]);
+  if(i===3) return D.qs.every((q,qi) => q.blanks.every((b,bi) => st.q[qi+'-'+bi]));
+  return !!S.done[p];
+}
+function wordQuizHTML(p){
+  const st = prog(p), W = PARTS[p].words;
+  if(!st.wq.list) st.wq.list = mix(W.map((w,i)=>i)).slice(0,5);
+  if(st.wq.done) return `<p class="fb ok">퀴즈 완료! 5문제 중 ${st.wq.score||0}개를 한 번에 맞혔어요.</p><button class="mini" id="wqAgain">다시 풀기</button>`;
+  const idx = st.wq.list[st.wq.i], w = W[idx];
+  const others = mix(W.map((x,i)=>i).filter(i => i!==idx)).slice(0,2);
+  const opts = mix([idx, ...others]);
+  return `<div class="meter"><i style="width:${st.wq.i/5*100}%"></i></div>
+    <div class="vq"><span class="note">${st.wq.i+1} / 5</span><span style="font-size:1.25rem">${esc(w[1])}</span>
+    <div class="opts">${opts.map(i => `<button class="opt en" data-wq="${i}">${esc(W[i][0])}</button>`).join('')}</div><p class="fb" id="fbwq"></p></div>`;
+}
+function bindWordQuiz(p){
+  const st = prog(p);
+  const again = document.getElementById('wqAgain'); if(again) again.onclick = () => { st.wq = {i:0, list:null, done:false}; draw(); };
+  let missed = false;
+  app.querySelectorAll('[data-wq]').forEach(b => b.onclick = () => {
+    const idx = st.wq.list[st.wq.i];
+    if(+b.dataset.wq === idx){
+      b.classList.add('right'); if(!missed) st.wq.score = (st.wq.score||0) + 1;
+      sayIt(PARTS[p].words[idx][0], 0.75);
+      setTimeout(() => { st.wq.i++; if(st.wq.i >= 5) st.wq.done = true; draw(); }, 420);
+    } else { missed = true; shake(b); const f = document.getElementById('fbwq'); f.className='fb no'; f.textContent='다시! 위의 단어 카드를 다시 봐도 돼요.'; }
+  });
+}
+function missionHTML(p,q,qi){
+  const st = prog(p); let bi = 0;
+  const line = esc(q.line).replace(/___/g, () => { const v = st.q[qi+'-'+bi]; const b = q.blanks[bi]; bi++; return `<span class="blank ${v?'ok':''}">${v?esc(b.a):'?'}</span>`; });
+  const cur = q.blanks.findIndex((b,i) => !st.q[qi+'-'+i]);
+  return `<div class="q"><span class="qt">Q${qi+1}. ${esc(q.q)} ${ttsBtn(q.q)}</span><span class="qk">${esc(q.k)}</span>
+    <div class="line">${line}</div>
+    ${cur === -1 ? `<p class="fb ok">정답이에요! 문장을 듣고 소리 내어 읽어 보세요. ${(() => { let k = 0; const full = q.line.replace(/___/g, () => q.blanks[k++].a).replace(/\s+([.?!])/g,'$1'); return ttsBtn(full) + ' ' + micBtn(full); })()}</p>` : `<div class="opts">${q.blanks[cur].o.map(o => `<button class="opt en" data-q="${qi}" data-b="${cur}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div><p class="fb" id="fbq${qi}"></p>`}
+  </div>`;
+}
+function bindMission(p){
+  const D = PARTS[p], st = prog(p);
+  app.querySelectorAll('.opt[data-q]').forEach(b => b.onclick = () => {
+    const qi = +b.dataset.q, bi = +b.dataset.b, ans = D.qs[qi].blanks[bi].a;
+    if(b.dataset.v === ans){ b.classList.add('right'); st.q[qi+'-'+bi] = true; S.stars++; saveS(); setTimeout(draw, 320); }
+    else { shake(b); const f = document.getElementById('fbq'+qi); f.className='fb no';
+      f.textContent = (ans === 'take') ? '힌트: make + 사람 다음에는 to 없이 동사원형!' : '본문을 한 번 더 읽어 볼까요?'; }
+  });
+}
+
+/* ---------- home group ---------- */
+function drawHome(){
+  paint('--warm');
+  let body = '';
+  if(view.step === 0){
+    body = `<div class="panel"><h2>A → B → C → D 순서로 설명해요</h2>
+      <p class="note">자기 차례가 되면 카드를 펼쳐 핵심 문법을 보여 주며 설명하세요. 다 들었으면 <b>들었어요</b>를 눌러요.</p>
+      ${ORDER.map(p => `<div class="rbox" style="--c:var(${PCOLOR[p]})"><h3><span>Expert ${p}</span>${esc(PARTS[p].title)}</h3>
+        <div class="tools"><button class="chipbtn" data-show="${p}">설명할 사람: 핵심 문법 보기</button>
+        <button class="chipbtn" data-heard="${p}" aria-pressed="${!!H.heard[p]}">${H.heard[p]?'✓ 들었어요':'들었어요'}</button></div>
+        <div hidden id="show${p}" style="display:flex;flex-direction:column;gap:8px">${PARTS[p].grammar.patterns.map(x => `<div class="pattern" style="--pc:var(${PCOLOR[p]})"><span class="form">${esc(x.form)}</span><span>${esc(x.mean)}</span><span class="ex">${esc(x.ex)}</span></div>`).join('')}</div>
+      </div>`).join('')}</div>`;
+  } else if(view.step === 1){
+    body = `<div class="panel"><h2>국립 공원 Fact File <small class="en">National Park Fact File</small></h2>
+      <p class="note">친구들의 설명을 떠올리며 빈칸을 채우고, 각 파트가 어느 국립 공원 이야기인지 골라요.</p>
+      ${DATA.report.map((r,ri) => reportHTML(r)).join('<div style="text-align:center;color:var(--muted)">↓</div>')}</div>`;
+  } else if(view.step === 2){
+    const rows = [
+      ['make / have / let + 사람 + 동사원형', '(사람이) …하게 하다 / 시키다 / 하도록 허락하다', 'The park makes visitors take their trash with them.<br>They let people enjoy the beauty of nature.', 'A, B'],
+      ['It is + 형용사 + to + 동사원형', '…하는 것은 ~하다 (It은 해석하지 않음)', 'It is exciting to walk on the glacier.', 'A'],
+      ['To + 동사원형 (목적)', '…하기 위해', 'They should book to enter the park.<br>To protect the Big Five, the park has been a no-hunting area.', 'B, D'],
+      ['be동사 + 과거분사', '…되다 (수동태)', 'Drones and helicopters are used to monitor hunting activities.', 'D'],
+      ['Have you heard about ~? / because of + 명사', '~에 대해 들어 본 적 있나요? / ~ 때문에', 'Have you heard about the Big Five?<br>They are in danger because of too much hunting.', 'C']
+    ];
+    const gl = {}; DATA.gramq.forEach((g,i) => gl['g'+i] = g);
+    body = `<div class="panel"><h2>핵심 문법 정리 <small>Key Grammar Summary</small></h2>
+      <div class="tw"><table class="gt"><tr><th>공식</th><th>뜻</th><th>본문 문장</th><th>파트</th></tr>
+      ${rows.map(r => `<tr><td class="en"><b>${r[0]}</b></td><td>${r[1]}</td><td class="en">${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</table></div>
+      <div class="bridge">기억법: <b>시키고(make, have), 허락하면(let) → 사람 + 동사원형 (to 없음!)</b> / <b>문장 앞에 It, 뒤에 to + 동사원형 → '…하는 것은'</b></div></div>
+      <div class="panel"><h2>모둠 문법 퀴즈 <small>알맞은 것을 골라요</small></h2>
+      ${DATA.gramq.map((g,i) => chooseHTML('g'+i, g, H.gram)).join('')}</div>`;
+    setTimeout(() => bindChoose(gl, H.gram, saveH, gramHint), 0);
+  } else if(view.step === 3){
+    body = `<div class="panel"><h2>Lesson 7 어휘 퀴즈 <small>영어 풀이와 우리말 뜻을 보고 단어를 골라요</small></h2>${vocabHTML()}</div>`;
+  } else if(view.step === 4){
+    const done = DATA.readq.filter((q,i) => H.read[i]).length, miss = Object.keys(H.readMiss).filter(k => !H.read[k] || H.readMiss[k]).length;
+    body = `<div class="panel"><h2>독해 퀴즈 <small class="en">Reading Comprehension</small></h2>
+      <p class="note">본문 전체 내용을 확인해요. 모르면 그 파트 전문가에게 물어보세요! (${done}/${DATA.readq.length})</p>
+      <div class="meter"><i style="width:${done/DATA.readq.length*100}%"></i></div>
+      ${DATA.readq.map((q,i) => readHTML(q,i)).join('')}
+      ${done === DATA.readq.length ? `<div class="done-hero" style="display:flex;flex-direction:column;gap:4px"><span class="hr" style="font-size:1.4rem">${DATA.readq.length - Object.keys(H.readMiss).length} / ${DATA.readq.length}</span><span>한 번에 맞힌 문제 수예요.</span></div>` : ''}</div>`;
+  } else {
+    const all = DATA.rules.every(r => H.rules[r.id]);
+    const rl = {}; DATA.rules.forEach(r => rl[r.id] = Object.assign({k:''}, r));
+    const ownOk = H.park && H.own.trim();
+    body = `<div class="panel"><h2>Final Group Mission: Our National Park Guide</h2>
+      <p class="note">방문객을 위한 국립 공원 안내문을 완성하고, 우리 모둠이 가고 싶은 공원을 정해요.</p>
+      ${DATA.rules.map(r => chooseHTML(r.id, Object.assign({k:'안내문'}, r), H.rules)).join('').replace(/<span>안내문<\/span>/g,'')}
+      <div class="q"><span>4. Which national park do you want to visit, and why? (우리 모둠이 직접 써요)</span>
+        <div class="line">We want to visit
+          <select class="typed" id="park"><option value="">공원 고르기</option>${['Torres del Paine','Kruger'].map(x => `<option ${H.park===x?'selected':''}>${x}</option>`).join('')}</select>
+          National Park because it is exciting to
+          <input class="typed" id="own" style="display:inline-block;width:auto;min-width:200px" placeholder="see the Big Five" value="${esc(H.own)}"> .</div></div>
+      ${all && ownOk ? `<div class="poster"><h3>Our National Park Guide</h3><ol>
+        ${DATA.rules.map(r => `<li>${esc(r.pre)} <span class="hl">${esc(r.a)}</span> ${esc(r.post)}</li>`).join('')}
+        <li>We want to visit <span class="hl">${esc(H.park)}</span> National Park because it is exciting to <span class="hl">${esc(H.own.trim())}</span>.</li></ol>
+        <div class="acts">${canSpeak?'<button class="mini tts" id="sayRules">▶ 안내문 듣기</button>':''}${micBtn(DATA.rules.map(r => `${r.pre} ${r.a} ${r.post}`).join(' '))}</div></div>
+        <button class="big" id="cleanBtn">모둠 활동 끝! 여권에 마지막 도장 찍기</button>` : '<p class="note">빈칸 1~3을 고르고, 4번에 공원과 이유를 쓰면 우리 모둠 안내문이 완성돼요.</p>'}
+      </div>
+      ${S.home ? `<div class="panel done-hero"><span class="hr">Mission Clear!</span><span>A, B, C, D 네 파트를 모아 두 국립 공원 이야기를 완성했어요.</span><span class="note">맞힌 문제 ${S.stars}개</span></div>` : ''}`;
+    setTimeout(() => {
+      bindChoose(rl, H.rules, saveH, item => item.a === 'to walk' ? 'It is + 형용사 + to + 동사원형!' : 'make, let 다음 사람 뒤에는 동사원형!');
+      const pk = document.getElementById('park'); if(pk) pk.onchange = () => { H.park = pk.value; saveH(); draw(); };
+      const o = document.getElementById('own'); if(o) o.onchange = () => { H.own = o.value; saveH(); draw(); };
+      const sr = document.getElementById('sayRules'); if(sr) sr.onclick = () => sayIt(DATA.rules.map(r => `${r.pre} ${r.a} ${r.post}`).join(' ') + ` We want to visit ${H.park} National Park because it is exciting to ${H.own.trim()}.`);
+      const cb = document.getElementById('cleanBtn'); if(cb) cb.onclick = () => { S.home = true; saveS(); draw(); window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); };
+    }, 0);
+  }
+  app.innerHTML = `${headBar('홈그룹 · Home Group')}
+    <div class="parthead"><span class="badge">Home</span><h1>네 파트를 모아 두 국립 공원 탐험하기</h1></div>
+    ${stepsBar(HOME_STEPS, view.step, homeDone)}
+    ${body}
+    ${navBar(5)}`;
+  bindNav();
+  if(view.step === 0){
+    app.querySelectorAll('[data-show]').forEach(b => b.onclick = () => { const el = document.getElementById('show'+b.dataset.show); el.hidden = !el.hidden; });
+    app.querySelectorAll('[data-heard]').forEach(b => b.onclick = () => { H.heard[b.dataset.heard] = !H.heard[b.dataset.heard]; saveH(); draw(); });
+  }
+  if(view.step === 1) bindReport();
+  if(view.step === 3) bindVocab();
+  if(view.step === 4) bindRead();
+}
+function homeDone(i){
+  if(i===0) return ORDER.every(p => H.heard[p]);
+  if(i===1) return DATA.report.every(r => r.items.every(it => H.rep[it.id]) && H.emo[r.p]);
+  if(i===2) return DATA.gramq.every((g,k) => H.gram['g'+k]);
+  if(i===3) return !!H.vocab.done;
+  if(i===4) return DATA.readq.every((q,k) => H.read[k]);
+  return !!S.home;
+}
+function reportHTML(r){
+  let h = `<div class="rbox" style="--c:var(${PCOLOR[r.p]})"><h3><span>Part ${r.p}</span>${esc(r.title)}</h3>`;
+  r.items.forEach(it => {
+    const v = H.rep[it.id];
+    const blank = `<span class="blank ${v?'ok':''}">${v?esc(it.a):'?'}</span>`;
+    h += `<div class="fill"><span class="p ${it.en?'en':''}">${esc(it.pre).replace('(  )', blank)}</span>
+      ${v ? (it.en ? `<div class="acts">${ttsBtn(it.pre.replace('(  )', it.a))}${micBtn(it.pre.replace('(  )', it.a))}</div>` : '') : `<div class="opts">${mix(it.o).map(o => `<button class="opt ${it.en?'en':''}" data-rep="${it.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`}</div>`;
+  });
+  const e = H.emo[r.p];
+  h += `<div class="fill"><span>${esc(r.emoq)}: <span class="blank ${e?'ok':''}">${e?esc(e):'?'}</span></span>
+    ${e ? '' : `<div class="opts">${DATA.emotions.map(x => `<button class="opt" data-emo="${r.p}" data-v="${x[0]}"><span class="en">${x[0]}</span> (${x[1]})</button>`).join('')}</div>`}</div>`;
+  return h + '</div>';
+}
+function bindReport(){
+  const items = {}; DATA.report.forEach(r => r.items.forEach(it => items[it.id] = it));
+  const emo = {}; DATA.report.forEach(r => emo[r.p] = r.emo);
+  app.querySelectorAll('[data-rep]').forEach(b => b.onclick = () => {
+    const it = items[b.dataset.rep];
+    if(b.dataset.v === it.a){ b.classList.add('right'); H.rep[it.id] = true; S.stars++; saveS(); saveH(); setTimeout(draw, 300); }
+    else shake(b);
+  });
+  app.querySelectorAll('[data-emo]').forEach(b => b.onclick = () => {
+    if(b.dataset.v === emo[b.dataset.emo]){ b.classList.add('right'); H.emo[b.dataset.emo] = b.dataset.v; S.stars++; saveS(); saveH(); setTimeout(draw, 300); }
+    else shake(b);
+  });
+}
+function vocabHTML(){
+  const V = DATA.vocabq, vs = H.vocab;
+  if(!vs.order) { vs.order = mix(V.map((v,i)=>i)); saveH(); }
+  if(vs.done) return `<div class="done-hero" style="display:flex;flex-direction:column;gap:6px"><span class="hr" style="font-size:1.4rem">${vs.score} / ${V.length}</span>
+    <span>한 번에 맞힌 단어 수예요.</span><button class="mini" id="vAgain">다시 풀기</button></div>`;
+  const idx = vs.order[vs.i], v = V[idx];
+  const others = mix(V.map((x,i)=>i).filter(i => i!==idx)).slice(0,3);
+  return `<div class="meter"><i style="width:${vs.i/V.length*100}%"></i></div>
+    <div class="vq"><span class="note">${vs.i+1} / ${V.length}</span><span class="def">${esc(v[0])} ${ttsBtn(v[0])}</span><span style="color:var(--pc)">${esc(v[1])}</span>
+    <div class="opts">${mix([idx, ...others]).map(i => `<button class="opt en" data-voc="${i}">${esc(V[i][2])}</button>`).join('')}</div><p class="fb" id="fbv"></p></div>`;
+}
+function bindVocab(){
+  const vs = H.vocab, V = DATA.vocabq; let missed = false;
+  const ag = document.getElementById('vAgain'); if(ag) ag.onclick = () => { H.vocab = {i:0, score:0, done:false, order:null}; saveH(); draw(); };
+  app.querySelectorAll('[data-voc]').forEach(b => b.onclick = () => {
+    const idx = vs.order[vs.i];
+    if(+b.dataset.voc === idx){ b.classList.add('right'); if(!missed) vs.score++; sayIt(V[idx][2], 0.75);
+      setTimeout(() => { vs.i++; if(vs.i >= V.length) vs.done = true; saveH(); draw(); }, 420); }
+    else { missed = true; shake(b); const f = document.getElementById('fbv'); f.className='fb no'; f.textContent='다시 골라 봐요. 우리말 뜻이 힌트예요.'; }
+  });
+}
+function readHTML(q,i){
+  const ok = H.read[i];
+  return `<div class="q rq"><span class="ptag" style="background:var(${PCOLOR[q.p]||'--main'})">${q.p === '전체' ? '전체' : 'Part ' + q.p}</span>
+    <span class="qt">${i+1}. ${esc(q.q)} ${ttsBtn(q.q)}</span><span class="qk">${esc(q.k)}</span>
+    ${ok ? `<p class="fb ok">정답: <span class="en">${esc(q.a)}</span></p>${q.why?`<p class="why">${esc(q.why)}</p>`:''}`
+      : `<div class="opts" style="flex-direction:column">${mix(q.o).map(o => `<button class="opt en" data-rq="${i}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div><p class="fb" id="fbr${i}"></p>`}
+  </div>`;
+}
+function bindRead(){
+  app.querySelectorAll('[data-rq]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.rq, q = DATA.readq[i];
+    if(b.dataset.v === q.a){ b.classList.add('right'); H.read[i] = true; S.stars++; saveS(); saveH(); setTimeout(draw, 320); }
+    else { H.readMiss[i] = true; saveH(); shake(b); const f = document.getElementById('fbr'+i); f.className = 'fb no';
+      f.textContent = q.p === '전체' ? '네 파트의 공통점을 생각해 봐요.' : `Part ${q.p} 전문가에게 물어보고 다시 골라요.`; }
+  });
+}
+draw();
+</script>
+</body></html>
+
+</body></html>
